@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="bfc83716-810d-46fc-a685-9e87cfc13550" xsi:noNamespaceSchemaLocation="https://www.jetbrains.com/teamcity/schemas/2021.1/project-config.xsd">
+  <name>F1 OKD Deployment (new)</name>
+  <settings>
+    <options>
+      <option name="cleanBuild" value="true" />
+    </options>
+    <parameters>
+      <param name="BUILD_VERSION" value="%build.number%" />
+      <param name="DEPLOYMENT_CONFIG" value="%DEPLOYMENT_CONFIG_DIR%/%COMPONENT_NAME%.yml" />
+      <param name="DEPLOYMENT_CONFIG_DIR" value="okd/deployments/%DEPLOYMENT_ENVIRONMENT%" spec="text display='normal' readOnly='true' validationMode='not_empty'" />
+      <param name="DEPLOYMENT_CONFIG_LABEL" value="master" />
+      <param name="DEPLOYMENT_DEFAULT_CONFIG" value="%DEPLOYMENT_CONFIG_DIR%/default.yml" />
+      <param name="DEPLOYMENT_ENVIRONMENT" value="test" />
+      <param name="HELM_CHART_NAME" value="spring-cloud" />
+      <param name="HELM_RELEASE" value="%COMPONENT_NAME%-%DEPLOYMENT_ENVIRONMENT%" />
+      <param name="HELM_REPO_NAME" value="helm-repo" />
+      <param name="HELM_REPO_URL" value="https://artifactory.openwaygroup.com/artifactory/helm" />
+      <param name="HELM_SERVICES_SET" value="--set image.tag=%BUILD_VERSION% --set componentName=%COMPONENT_NAME% --set configLabel=%DEPLOYMENT_CONFIG_LABEL% --set dockerRegistry=%DOCKER_REGISTRY% --set route.clusterDomain=%OKD_APPS_DOMAIN% --set additionalProfile=%F1_OKD_DEPLOYMENT_ADDITIONAL_PROFILE%" />
+      <param name="OKD_PROJECT_NAME" value="f1" />
+      <param name="OKD_SA_TOKEN" value="credentialsJSON:fb5df189-1047-4599-bb57-b439561c1a82" spec="password display='hidden'" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_3344" name="Login to the OKD cluster" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content"><![CDATA[oc login --token=%OKD_SA_TOKEN% %OKD_SERVER_URL%
+oc project %OKD_PROJECT_NAME%]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3529" name="Add Artifactory Helm Repo" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content"><![CDATA[helm repo add %HELM_REPO_NAME% %HELM_REPO_URL%
+helm repo update
+helm search repo]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3370" name="Helm analyse code for potential errors" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content"><![CDATA[helm pull %HELM_REPO_NAME%/%HELM_CHART_NAME% --untar --untardir /tmp/chart/
+helm lint /tmp/chart/%HELM_CHART_NAME% -f %DEPLOYMENT_DEFAULT_CONFIG% -f %DEPLOYMENT_CONFIG%]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3371" name="Helm simulate an installation" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content"><![CDATA[helm upgrade %HELM_RELEASE% %HELM_REPO_NAME%/%HELM_CHART_NAME% \
+--atomic --install -n %OKD_PROJECT_NAME% %HELM_SERVICES_SET% -f %DEPLOYMENT_DEFAULT_CONFIG%,%DEPLOYMENT_CONFIG% \
+--dry-run]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3373" name="Helm component deploy" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content"><![CDATA[helm upgrade %HELM_RELEASE% %HELM_REPO_NAME%/%HELM_CHART_NAME% \
+--atomic --install --timeout 15m %HELM_SERVICES_SET% -f %DEPLOYMENT_DEFAULT_CONFIG%,%DEPLOYMENT_CONFIG% \
+-n %OKD_PROJECT_NAME%]]></param>
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3530" name="Unlogin from OKD cluster" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content"><![CDATA[oc logout
+rm -rf ~/.kube/]]></param>
+          <param name="teamcity.step.mode" value="execute_always" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_3544" name="Delete Helm chart archive from temp dir" type="simpleRunner">
+        <parameters>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.downloadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.uploadSpecSource" value="Job configuration" />
+          <param name="org.jfrog.artifactory.selectedDeployableServer.useSpecs" value="false" />
+          <param name="script.content" value="rm -rf /tmp/chart/" />
+          <param name="teamcity.step.mode" value="execute_always" />
+          <param name="use.custom.script" value="true" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_2659" name="Close Deployed Issues" type="CloseDeployedIssues">
+        <parameters>
+          <param name="BUILD_VERSION" value="%BUILD_VERSION%" />
+          <param name="COMPONENT_NAME" value="%COMPONENT_NAME%" />
+          <param name="EXTRA_PARAMETERS" value="%RELENG_EXTRA_PARAMETERS%" />
+          <param name="PATH_TO_POM_XML" value="" />
+          <param name="teamcity.step.mode" value="default" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="RDDepartment_F1SandboxProject_TestVcsInGh_F1ServiceDeployment" />
+    </vcs-settings>
+    <requirements>
+      <contains id="RQ_1751" name="teamcity.agent.jvm.os.name" value="Linux" />
+    </requirements>
+    <build-triggers />
+    <build-extensions>
+      <extension id="swabra" type="swabra">
+        <parameters>
+          <param name="swabra.enabled" value="swabra.after.build" />
+        </parameters>
+      </extension>
+    </build-extensions>
+    <cleanup />
+  </settings>
+</template>
+

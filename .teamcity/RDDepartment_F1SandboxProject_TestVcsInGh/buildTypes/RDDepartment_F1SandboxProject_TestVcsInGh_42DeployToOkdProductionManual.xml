@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="c1b4b934-5cc3-41a4-8cd6-9748e9c45144" xsi:noNamespaceSchemaLocation="https://www.jetbrains.com/teamcity/schemas/2021.1/project-config.xsd">
+  <name>[4.2] Deploy to OKD production (Manual)</name>
+  <description />
+  <settings ref="RDDepartment_F1SandboxProject_TestVcsInGh_F1okdDeploymentNew">
+    <options>
+      <option name="buildNumberPattern" value="%dep.RDDepartment_F1SandboxProject_TestVcsInGh_10CompileUtAuto.BUILD_VERSION%" />
+    </options>
+    <disabled-settings>
+      <setting-ref ref="RUNNER_2659" />
+    </disabled-settings>
+    <parameters>
+      <param name="DEPLOYMENT_ENVIRONMENT" value="production" />
+      <param name="HELM_SERVICES_SET" value="--set image.name=octopusden/employee-service --set image.tag=%PROJECT_VERSION% --set componentName=%COMPONENT_NAME% --set configLabel=%DEPLOYMENT_CONFIG_LABEL% --set dockerRegistry=%DOCKER_REGISTRY% --set route.clusterDomain=%OKD_APPS_DOMAIN% --set additionalProfile=%F1_OKD_DEPLOYMENT_ADDITIONAL_PROFILE%" />
+      <param name="PROJECT_VERSION" value="%dep.RDDepartment_F1SandboxProject_TestVcsInGh_10CompileUtAuto.PROJECT_VERSION%" />
+    </parameters>
+    <build-runners order="RUNNER_3344, RUNNER_3529, RUNNER_3370, RUNNER_3371, RUNNER_3373, RUNNER_3530, RUNNER_3544, RUNNER_2659" />
+    <vcs-settings />
+    <requirements />
+    <build-triggers />
+    <dependencies>
+      <depend-on sourceBuildTypeId="RDDepartment_F1SandboxProject_TestVcsInGh_2">
+        <options>
+          <option name="take-started-build-with-same-revisions" value="true" />
+          <option name="take-successful-builds-only" value="true" />
+        </options>
+      </depend-on>
+    </dependencies>
+    <cleanup />
+  </settings>
+</build-type>
+

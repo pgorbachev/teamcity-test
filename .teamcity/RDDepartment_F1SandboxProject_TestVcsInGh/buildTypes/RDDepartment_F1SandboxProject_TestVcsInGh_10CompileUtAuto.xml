@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" uuid="d7ffb4ed-447d-4b02-b206-523636f9061c" xsi:noNamespaceSchemaLocation="https://www.jetbrains.com/teamcity/schemas/2021.1/project-config.xsd">
+  <name>[1.0] Compile &amp; UT [AUTO]</name>
+  <description />
+  <settings ref="CDCompileUTGradle">
+    <disabled-settings>
+      <setting-ref ref="RUNNER_2383" />
+      <setting-ref ref="RUNNER_2473" />
+      <setting-ref ref="RUNNER_2987" />
+    </disabled-settings>
+    <parameters>
+      <param name="ARTIFACT_PATH"><![CDATA[server/build/docker_logs => server_test_docker_log
+ft/build/docker_logs => ft_docker_log]]></param>
+      <param name="AUTH_SERVER_CLIENT_ID" value="test" />
+      <param name="CURRENT_COMMIT" value="" />
+      <param name="GRADLE_EXTRA_PARAMETERS" value="-Pdocker.registry=%DOCKER_REGISTRY% -Poctopus.github.docker.registry=%OCTOPUS_GITHUB_DOCKER_REGISTRY% -Pauth-server.client-id=%AUTH_SERVER_CLIENT_ID% -Pauth-server.client-secret=%AUTH_SERVER_CLIENT_SECRET% -Pemployee-service.user=%TECHNICAL_USER% -Pemployee-service.password=%TECHNICAL_USER_PASSWORD%" />
+      <param name="GRADLE_TASK" value="build dockerBuildImage ft dockerPushImage --rerun-tasks" />
+      <param name="OCTOPUS_GITHUB_DOCKER_REGISTRY" value="%DOCKER_REGISTRY%" />
+      <param name="VERSION_TAG" value="" />
+      <param name="env.AUTH_SERVER_REALM" value="f1-dev" />
+      <param name="env.AUTH_SERVER_URL" value="https://f1-base-services-test.spb.openwaygroup.com/auth" />
+      <param name="env.TECHNICAL_USER_TOKEN" value="credentialsJSON:15b80e82-a92c-4f96-9be0-4e0219bdc8bc" spec="password display='hidden'" />
+    </parameters>
+    <build-runners order="RUNNER_275, RUNNER_4110, RUNNER_2383, RUNNER_2473, RUNNER_880, RUNNER_2384, RUNNER_2987, RUNNER_860">
+      <runner id="RUNNER_4110" name="Calculate build parameters" type="OctopusCalculateBuildParameters">
+        <parameters>
+          <param name="CURRENT_COMMIT" value="%CURRENT_COMMIT%" />
+          <param name="PROJECT_VERSION" value="%PROJECT_VERSION%" />
+          <param name="teamcity.step.mode" value="default" />
+        </parameters>
+      </runner>
+      <runner id="RUNNER_2384" name="Build &amp; Publish to Artifactory" type="gradle-runner">
+        <parameters>
+          <param name="jvmArgs"><![CDATA[-Duser.name=%teamcity.agent.jvm.user.name% -Duser.home=%teamcity.agent.jvm.user.home%
+%JAVA_OPTS%]]></param>
+          <param name="org.jfrog.artifactory.selectedDeployableServer.defaultModuleVersionConfiguration" value="GLOBAL" />
+          <param name="target.jdk.home" value="%env.JAVA_HOME%" />
+          <param name="teamcity.build.workingDir" value="%WORK_DIR%" />
+          <param name="teamcity.coverage.emma.include.source" value="true" />
+          <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
+          <param name="teamcity.coverage.idea.includePatterns" value="*" />
+          <param name="teamcity.step.mode" value="default" />
+          <param name="ui.gradleRunner.additional.gradle.cmd.params"><![CDATA[--info
+%GRADLE_STANDARD_PARAMETERS%
+%GRADLE_EXTRA_PARAMETERS%]]></param>
+          <param name="ui.gradleRunner.gradle.home" value="%env.BUILD_ENV%/GRADLE/%GRADLE_VERSION%" />
+          <param name="ui.gradleRunner.gradle.stacktrace.enabled" value="true" />
+          <param name="ui.gradleRunner.gradle.tasks.names" value="%GRADLE_TASK%" />
+          <param name="ui.gradleRunner.gradle.wrapper.useWrapper" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <vcs-settings>
+      <vcs-entry-ref root-id="RDDepartment_F1SandboxProject_TestVcsInGh_EmployeeServiceOctopusVcs" />
+    </vcs-settings>
+    <requirements>
+      <exists id="RQ_1401" name="env.DOCKER" />
+      <contains id="RQ_1406" name="env.OS_TYPE" value="CENTOS7x64" />
+    </requirements>
+    <build-triggers />
+    <build-extensions>
+      <extension id="DockerSupport" type="DockerSupport">
+        <parameters>
+          <param name="login2registry" value="PROJECT_EXT_177,PROJECT_EXT_350" />
+          <param name="loginCheckbox" value="on" />
+        </parameters>
+      </extension>
+    </build-extensions>
+    <cleanup />
+  </settings>
+</build-type>
+
